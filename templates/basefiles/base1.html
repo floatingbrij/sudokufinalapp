@@ -1,0 +1,383 @@
+<!-- Html document, that will be the client side of this program. This HTML document will be displayed in client side browser -->
+<!DOCTYPE html>
+<html lang="en">
+<!-- Adding the required styles and fonts -->
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suduko!</title>
+  <!-- CSS for styling the Website -->
+  <style>
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button 
+    {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    /* Firefox */
+    input[type=number] 
+    {
+      -moz-appearance: textfield;
+    }
+
+    input {
+      color: rgb(94, 85, 223);
+      font-weight: 500;
+      padding: 0;
+      border: 0;
+      text-align: center;
+      width: 52px;
+      height: 52px;
+      font-size: 26px;
+      background-color: #ffffff;
+    }
+    input:disabled {
+      font-weight: normal;
+      color: #32744b !important;
+      background-color: #ffffff;
+
+      opacity: 1;
+    }
+    td:nth-child(3) {
+      border-right: 2px solid #1e1e1e;
+      text-align: center;
+      vertical-align: middle;
+    }
+    tr:nth-child(3) {
+      border-bottom: 2px solid #1e1e1e;
+    }
+    td:nth-child(6) {
+      border-right: 2px solid #1e1e1e;
+      text-align: center;
+      vertical-align: middle;
+    }
+    tr:nth-child(6) {
+      border-bottom: 2px solid #1e1e1e;
+    }
+    #cell-0 {
+      border-top-left-radius: 10px;
+    }
+    #cell-8 {
+      border-top-right-radius: 10px;
+    }
+    #cell-72 {
+      border-bottom-left-radius: 10px;
+    }
+    #cell-80 {
+      border-bottom-right-radius: 10px;
+    }
+  </style>
+</head>
+<!-- The main body of the website -->
+<body class=" h-100 text-white" style="background-color: #1B1C21;">
+  <!-- Top navigation bar -->
+  <nav class="navbar navbar-expand navbar-dark ">
+    <div class="container">
+      <div class="container justify-content-center">
+        <span class="mb-0 h1" id="header"
+          style="color: red;font-family: 'Permanent Marker', cursive; font-size: 68px; ">Suduko!</span>
+      </div>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+        aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse pt-3" id="navbarNavDropdown">
+        <ul class="navbar-nav me-auto mb-2  ">
+          <li class="nav-item">
+            <a class="nav-link active" style="width: 100px;" aria-current="page" href="#" onclick="newgame()">
+              <div>New Game</div>
+            </a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false">
+              Difficulty
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+              <li><a class="dropdown-item {% if session['diff'] == 3 %}
+                active
+              {% endif %}" onclick="diff(3)" id="d3" href="#">Easy</a></li>
+              <li><a class="dropdown-item  {% if session['diff'] == 4 %}
+                active
+              {% endif %}" onclick="diff(4)" id="d4" href="#">Medium</a></li>
+              <li><a class="dropdown-item {% if session['diff'] == 5 %}
+                active
+              {% endif %}" onclick="diff(5)" id="d5" href="#">Expert</a></li>
+            </ul>
+          </li>
+        </ul>
+
+      </div>
+    </div>
+  </nav>
+  <!-- Main container with Sudoku board -->
+  <div class="container pt-3">
+    <div class="row justify-content-center text-center">
+      <div class="col">
+        <div class="d-flex justify-content-center ">
+          <div class="p-2">
+            <table id="grid">
+              <!-- JINJA Template usage: For loop to make the sudoku board -->
+              {% set counter = namespace(value=0) %}
+              {% for row in sudoku %}
+              <tr>
+                {% for cells in row %}
+                <td><input maxlength="1" type="number" min="1" 
+                    oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength); if (this.value == 0) this.value = ''"
+                    maxlength="1" id="cell-{{ counter.value }}" {% if cells !=0 %} value="{{cells}}" {% endif %} {% if
+                    cells !=0 %} disabled {% endif %}></td>
+                {% set counter.value = counter.value + 1 %}
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row justify-content-center text-center" id="alert"></div>
+    <!-- Buttons to reset, validate & to show solution -->
+    <div class="row justify-content-center text-center ">
+      <div class="d-flex justify-content-center mb-3">
+
+        <div class="p-2 ">
+          <button id="check" style="border-radius:12px;" data-bs-toggle="tooltip" data-bs-placement="bottom"
+            title="Validate" onclick="check()" type="button" class="btn btn-success "><svg
+              xmlns="http://www.w3.org/2000/svg" width="40" height="27" fill="currentColor" class="bi bi-check"
+              viewBox="0 0 16 16">
+              <path
+                d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z" />
+            </svg></button>
+        </div>
+        <div class="p-2 ">
+          <button id="reset" style="border-radius:12px;" data-bs-toggle="tooltip" data-bs-placement="bottom"
+            title="Clear board" onclick="reset()" type="button" class="btn btn-danger " style="width:40px;height:27px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="27" fill="currentColor"
+              class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z" />
+              <path
+                d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z" />
+            </svg>
+          </button>
+        </div>
+        <div class="p-2 ">
+          <button id="solve" style="border-radius:12px;  height: 41px;" data-bs-toggle="tooltip"
+            data-bs-placement="bottom" title="Show Solution" onclick="solve()" type="button"
+            class="btn btn-secondary">Show Solution</button></button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="py-3 my-5">
+
+    <p class="text-center text-muted">Made with ❣️, by Brijesharun</p>
+  </footer>
+<!-- Adding the required Scripts for Bootstrap, Jquery and Axios -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js" integrity="sha512-u9akINsQsAkG9xjc1cnGF4zw5TFDwkxuc9vUp5dltDWYCSmyd0meygbvgXrlc/z7/o4a19Fb5V0OUE58J7dcyw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <!-- Script for resizing the page for mobile devices-->
+  <script>
+    $(document).ready(function () {
+      let isMobileDevice = window.matchMedia("only screen and (max-width: 760px)").matches;
+      if (isMobileDevice) {
+        // The viewport is less than 768 pixels wide
+        //Conditional script here
+        var x = document.getElementsByTagName("INPUT");
+        for (var i = 0; i < x.length; i++) {
+          x[i].style.width = "38px";
+          x[i].style.height = "38px";
+          x[i].style.fontSize = "25px";
+        }
+        var y = document.getElementById("header")
+        y.style.fontSize = "40px"
+      }
+    });
+  </script>
+  <!-- Main script, for buttons to function post quesries -->
+  <script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+    //Function to convert sudoku table to list of list to send to server.
+    function board() {
+      var data = []
+      for (var i = 0; i < 9; i++) {
+        var row = []
+        for (var j = 0; j < 9; j++) {
+          var cell = document.getElementById("cell-" + (i * 9 + j))
+          if (cell.value == "0") {
+            row.push("")
+          }
+          else { row.push(cell.value) }
+        }
+        data.push(row)
+      }
+      return data
+    }
+    //Function to validate board, sends back the current board and checks if it is correct till point.
+    function check() {
+      var data = board()
+      axios.post("{{url_for('sudokupost')}}", { board: data, type: "check" }).then(
+        async function (r) {
+          $('#check').tooltip('hide')
+          if (r.data.isfull && r.data.validity) {
+            document.getElementById('alert').innerHTML = `
+                  <div class="d-flex flex-row justify-content-center">
+                    <div class="p-2 alert alert-success" role="alert">
+                      <h4 class="alert-heading">Well done!</h4>
+                      <h3>Aww yeah! you have successfully completed this Sudoku board!</h3>
+                      
+                      <p class="mb-0">You can always start a new game, by clicking the button on top!</p>
+                    </div>
+                  </div>`
+            document.getElementById('check').disabled = true
+
+            document.getElementById('solve').disabled = true
+            for (var i = 0; i < 81; i++) {
+              document.getElementById('cell-' + i).disabled = true
+            }
+          }
+          else if (r.data.validity == true) {
+            document.getElementById('alert').innerHTML = `
+                  <div class="d-flex flex-row justify-content-center">
+                    <div class="p-2 alert alert-warning " role="alert">
+                      You're almost there! The board is valid up till now! Finish it!
+                    </div>
+                  </div>`
+            await new Promise(r => setTimeout(r, 4000));
+            document.getElementById('alert').innerHTML = ``
+          }
+          else {
+            document.getElementById('alert').innerHTML = `
+                  <div class="d-flex flex-row justify-content-center">
+                    <div class="p-2 alert alert-danger" role="alert">
+                      There are mistakes in your board! Please recheck or restart.
+                    </div>
+                  </div>`
+            await new Promise(r => setTimeout(r, 4000));
+            document.getElementById('alert').innerHTML = ``
+          }
+        }
+      ).catch(
+        function (e) {
+          console.log(e)
+        }
+      )
+    }
+    //Function to reset board, post request to send original board stored in session
+    function reset() {
+      axios.post("{{url_for('sudokupost')}}", { type: "reset" }).then(
+        async function (r) {
+          $('#reset').tooltip('hide')
+          document.getElementById('alert').innerHTML = ``
+          for (var i = 0; i < 9; i++) {
+            for (var j = 0; j < 9; j++) {
+              var cell = document.getElementById("cell-" + (i * 9 + j))
+              if (r.data[i][j] != 0) {
+                cell.value = r.data[i][j]
+              }
+              else {
+                cell.value = ""
+                cell.disabled = false
+              }
+            }
+          }
+          document.getElementById('check').disabled = false
+          document.getElementById('solve').disabled = false
+        }
+      ).catch(
+        function (e) {
+          console.log(e)
+        }
+      )
+    }
+    //function to show the actual solution of said board.
+    function solve() {
+      console.log(this.value)
+      var data = board()
+      axios.post("{{url_for('sudokupost')}}", { board: data, type: "solve" }).then(
+        async function (r) {
+          $('#solve').tooltip('hide')
+          console.log(r)
+          for (var i = 0; i < 9; i++) {
+            for (var j = 0; j < 9; j++) {
+              var cell = document.getElementById("cell-" + (i * 9 + j))
+
+              cell.value = r.data[i][j]
+              cell.disabled = true
+
+            }
+          }
+          document.getElementById('check').disabled = true
+          document.getElementById('solve').disabled = true
+          document.getElementById('alert').innerHTML = `
+                  <div class="d-flex flex-row justify-content-center">
+                    <div class="p-2 alert alert-danger" role="alert">
+                      You are viewing the solution to the given board, please start a new game or restart the current one to proceed.
+                    </div>
+                  </div>`
+        }
+      ).catch(
+        function (e) {
+          console.log(e)
+        }
+      )
+    }
+    //Function to get a new board.
+    function newgame() {
+      axios.post("{{url_for('sudokupost')}}", { type: "newgame" }).then(
+        async function (r) {
+          document.getElementById('alert').innerHTML = ``
+          for (var i = 0; i < 9; i++) {
+            for (var j = 0; j < 9; j++) {
+              var cell = document.getElementById("cell-" + (i * 9 + j))
+              if (r.data[i][j] != 0) {
+                cell.value = r.data[i][j]
+                cell.disabled = true
+              }
+              else {
+                cell.value = ""
+                cell.disabled = false
+              }
+            }
+          }
+          document.getElementById('check').disabled = false
+          document.getElementById('solve').disabled = false
+        }
+      ).catch(
+        function (e) {
+          console.log(e)
+        }
+      )
+    }
+    //Function to change difficulty and store in session.
+    function diff(difficulty) {
+      axios.post("{{url_for('sudokupost')}}", { type: "setdiff", diff: difficulty }).then(
+        async function (r) {
+
+          var element2 = document.getElementById("d3");
+          element2.classList.remove("active");
+          var element2 = document.getElementById("d4");
+          element2.classList.remove("active");
+          var element2 = document.getElementById("d5");
+          element2.classList.remove("active");
+          var element2 = document.getElementById("d" + difficulty);
+          element2.classList.add("active");
+          newgame();
+        }
+      ).catch(
+        function (e) {
+          console.log(e)
+        }
+      )
+    }
+  </script>
+</body>
+</html>
